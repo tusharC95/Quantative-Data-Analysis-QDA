@@ -1,0 +1,157 @@
+---
+title: "CrossValidation"
+author: "Tushar Chitnavis"
+date: "2024-10-07"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+-----------------------------------------------------------------------------------------------------
+
+Cross-validation for Normal and Gamma distribution. [25 point]
+(a) Generate 100 random numbers from the normal distribution with mu = 10 and sigma = 2
+using set.seed(200). This is your synthetic data.
+(b) Suppose you have two different models: the normal distribution and the Gamma
+distribution. Use a 10 fold cross-validation to see which model has a higher predictive
+power. [15 point]
+(c) Generate 100 random numbers from the Gamma distribution with r = 2 and
+rate = 0.5 using set.seed(200). Given this new synthetic data, repeat (b). Which one
+has a higher predictive power? [10 point]
+
+```{r}
+library(fitdistrplus)
+library(MASS)
+
+set.seed(200)
+
+actual_mu <- 10
+actual_sigma <- 2
+
+# This is 100 random numbers from the normal distribution.
+data_norm <- rnorm(100, mean = actual_mu, sd = actual_sigma)
+
+
+# (c) Generate 100 random numbers from the Gamma distribution with r = 2 and rate = 0.5 using set.seed(200). 
+# Given this new synthetic data, repeat (b). Which one has a higher predictive power?
+set.seed(200)
+actual_shape <- 2
+actual_rate <- 0.5
+
+# This is 100 random numbers from the Gamma distribution.
+data_gamma <- rgamma(100, shape = actual_shape, rate = actual_rate)
+
+# (b) Suppose you have two different models: the normal distribution and the Gamma distribution.
+# Use a 10 fold cross-validation to see which model has a higher predictive
+# power.
+
+#First we calculate likelihood for normal distribution.
+likelihood_norm <- function(params, data) {
+  mu <- params[1]
+  sigma <- params[2]
+  
+  # Calculate the log-likelihood for each data point
+  likelihood <- -dnorm(data, mean = mu, sd = sigma, log = TRUE)
+  
+  # Sum the log-likelihoods to get the total log-likelihood
+  total_likelihood <- sum(likelihood)
+  
+  # Return the negative log-likelihood
+  return(total_likelihood)
+}
+
+#Then we calculate likelihood for Gamma distribution.
+likelihood_gamma <- function(params, data) {
+  
+  # Calculate the log-likelihood for each data point
+  likelihood <- -dgamma(data, shape = params[1], rate = params[2], log = TRUE)
+  
+  # Sum the log-likelihoods to get the total log-likelihood
+  total_likelihood <- sum(likelihood)
+  
+  # Return the negative log-likelihood
+  return(total_likelihood)
+}
+
+CV_fun <- function(n_fold, n_rep, uni_data, distribution){
+ 
+  test_list <- list()
+  test_list_all <- list()
+  
+  for(i in 1:n_rep){
+    
+    uni_data_s <- sample(uni_data)
+    
+    # Split in n_fold subsets
+    folds <- cut(seq(1, length(uni_data_s)), breaks = n_fold, labels=FALSE)
+    
+    for(j in 1:n_fold){
+      
+      testID <- which(folds==j)
+      
+      testD <- uni_data_s[testID]
+      trainD <- uni_data_s[-testID]
+      
+      if (distribution == "Normal_Distribution") {
+
+          mle_optND <- optim(par = c(mean(trainD), sd(trainD)),
+                            fn = likelihood_norm,
+                            data = trainD,
+                            method = "L-BFGS-B",
+                            lower = - Inf, upper = + Inf)
+          ftdstrN <- fitdistr(trainD, "normal", method = "mle")
+          test_result <- sum(dnorm(testD, mle_optND$par[1], mle_optND$par[2], log = T))
+          
+      }else if (distribution == "Gamma_Distribution"){
+        
+          mle_optGD <- optim(par = c(((mean(trainD))^2/var(trainD)), (mean(trainD)/var(trainD))),
+                          fn = likelihood_gamma,
+                          data = trainD,
+                          method = "L-BFGS-B",
+                          lower = 0, upper = + Inf)
+          ftdstrG <- fitdistr(trainD, "gamma")
+          test_result <- sum(dgamma(testD, shape = mle_optGD$par[1], rate = mle_optGD$par[2], log = T))
+          
+      }else{
+        
+        print(paste("Unrecognized distribution requested", distribution, sep=" "))
+        quit(status=1)
+      }
+      test_list[[j]] <- test_result
+    }
+    test_list_all[[i]] <- sum(unlist(test_list)) # the sum of all n-fold likelihood
+  }
+  return(test_list_all)
+}
+
+CV_norm <- CV_fun(n_fold = 10, n_rep = 20, uni_data = data_norm, distribution = "Normal_Distribution")
+CV_gamma <- CV_fun(n_fold = 10, n_rep = 20, uni_data = data_norm, distribution = "Gamma_Distribution")
+
+cat("Mean of log liklihood for normal distribution using rnorm:", mean(unlist(CV_norm)), "\n")
+cat("Mean of log liklihood for Gamma distribution using rnorm:", mean(unlist(CV_gamma)), "\n")
+
+CV_norm <- CV_fun(n_fold = 10, n_rep = 20, uni_data = data_gamma, distribution = "Normal_Distribution")
+CV_gamma <- CV_fun(n_fold = 10, n_rep = 20, uni_data = data_gamma, distribution = "Gamma_Distribution")
+ 
+cat("Mean of log liklihood for normal distribution using rgamma:", mean(unlist(CV_norm)), "\n")
+cat("Mean of log liklihood for Gamma distribution using rgamma:", mean(unlist(CV_gamma)), "\n")
+
+```
+
+COMMENT:
+Lower Mean Squared Error MSE values indicate better predictive performance.
+
+In (b) normal distribution has mean value less then Gamma distribution. Therefore normal distribution has higher predictive power.
+
+In (c) both distributions with random number generated using gamma [-256.0131 and -235.4411] has lower mean value than distributions with random number generated using normal [-205.1128 and -204.394 ]. Therefore random numbers data set created using gamma distribution(rgamma) has higher predictive power.
+
+-----------------------------------------------------------------------------------------------------
+
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:

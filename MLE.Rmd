@@ -1,0 +1,117 @@
+---
+title: "MLE"
+author: "Tushar Chitnavis"
+date: "2023-09-30"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+-----------------------------------------------------------------------------------------------------
+
+MLE for normal distribution
+(a) Generate 50 random numbers with set.seed(200) from the normal distribution with
+mu = 0 and sigma = 2.R coding only
+(b) Given this synthetic data in (a), estimate mu and sigma using the MLE. Use optim() or
+nlm() function. Check whether the estimated parameters are close to the actual
+ones. 
+(c) Repeat this exercise with 5000 generated numbers instead of 50 numbers with
+set.seed(200). What difference can you tell? 
+5. Cross-validation for Normal and Gamma distribution.
+
+```{r}
+set.seed(200)
+
+#Generate 50 Random Numbers from a Normal Distribution:
+
+# Actual parameters
+actual_mu <- 0
+actual_sigma <- 2
+
+data_50 <- rnorm(50, mean = actual_mu, sd = actual_sigma)
+
+#Plot histogram of Normal Distribution
+hist(data_50, xlab = "x", ylab = "", main = "", freq = F, xlim = c(-10, 10))
+
+# Initial parameter values for optimization
+
+initial_params_50 <- c(mean(data_50), sd(data_50))
+cat("Initial Parameters (mean and standard deviation) for 50 random numbers:",initial_params_50, "\n")
+
+#Optimize for 50 Data Points:
+likelihood_norm <- function(params, data) {
+  mu <- params[1]
+  sigma <- params[2]
+  
+  # Calculate the log-likelihood for each data point
+  likelihood <- -dnorm(data, mean = mu, sd = sigma, log = TRUE)
+  
+  # Sum the log-likelihoods to get the total log-likelihood
+  total_likelihood <- sum(likelihood)
+  
+  return(total_likelihood)
+}
+
+# Optimize the log-likelihood function
+optim_result <- optim(par = initial_params_50, fn = likelihood_norm, data = data_50)
+
+estimated_mu <- optim_result$par[1]
+estimated_sigma <- optim_result$par[2]
+
+cat("Actual μ:", actual_mu, "\n")
+cat("Estimated μ for 50 random numbers:", estimated_mu, "\n")
+cat("Actual σ:", actual_sigma, "\n")
+cat("Estimated σ for 50 random numbers:", estimated_sigma, "\n")
+
+set.seed(200)
+
+#Repeat the exercise with 5000 generated numbers
+
+data_5000 <- rnorm(5000, mean = actual_mu, sd = actual_sigma)
+
+initial_params_5000 <- c(mean(data_5000), sd(data_5000))
+cat("Initial Parameters (mean and standard deviation) for 5000 random numbers:",initial_params_5000, "\n")
+
+# Optimize for 5000 data points
+optim_result_5000 <- optim(par = initial_params_5000, fn = likelihood_norm, data = data_5000)
+
+# Estimated parameters for 5000 data points
+estimated_mu_5000 <- optim_result_5000$par[1]
+estimated_sigma_5000 <- optim_result_5000$par[2]
+
+# Print results
+cat("Actual μ:", actual_mu, "\n")
+print("Estimated μ for 5000 random numbers:", estimated_mu_5000, "\n")
+cat("Actual σ:", actual_sigma, "\n")
+cat("Estimated σ for 5000 random numbers:", estimated_sigma_5000, "\n")
+
+
+```
+
+
+COMMENT:
+
+The closer the estimated parameters are to the actual parameters, the better the MLE performs.
+
+After performing (b) It is observed from the above result that Estimated μ for 50 random numbers [-0.1611923] and Estimated σ for 50 random numbers[1.560582] are not close to actual values.
+
+After performing (c) It is clear that Estimated μ for 5000 random numbers [0.01837722] and Estimated σ for 5000 random numbers [1.968205] are closer to actual values than the data set with 50 numbers.
+
+Therefore, MLE with 5000 random numbers will perform better than the 50 random numbers.
+
+-----------------------------------------------------------------------------------------------------
+
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+
+
+
+
+
