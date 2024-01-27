@@ -1,0 +1,67 @@
+# ---
+#   title: "SimpleErn"
+# author: "Tushar Chitnavis"
+# date: "2023-09-16"
+# output: html_document
+# ---
+#   
+
+# -----------------------------------------------------------------------------------------------------
+#   
+#   Simple urn simulation with R: There is an urn with 2 black balls (B), 3 white balls (W),
+# and 3 red balls (R). We draw all of these 8 balls sequentially.
+# (a) What is the probability of observing B first and W last when we draw without
+# replacement. The sequence between the first B and the last W does not matter.
+# Calculate the probability by simulation.
+# (b) What is the probability of observing B first and W last when we draw with replacement.
+# The sequence between the first B and the last W does not matter.
+# Calculate the probability by simulation.
+
+
+#This line creates a vector simple_urn representing the composition of the urn. There are two balls of type 1, three of type 2, and three of type 3.
+
+simple_urn <- c(rep(1, 2), rep(2, 3), rep(3, 3))
+
+#'n_trial' is the number of trials to be conducted in the simulation. In this case, it's set to 10,000.
+
+n_trial <- 10^4
+
+#Two matrices (w_replacement and wo_replacement) are initialized to store the results of the urn experiments.
+
+w_replacement <- matrix(NA, nrow = n_trial, ncol = length(simple_urn))
+wo_replacement <- matrix(NA, nrow = n_trial, ncol = length(simple_urn))
+
+#In each iteration, a random sample of balls is drawn with and without replacement and stored in the matrices.
+
+for (i in 1:n_trial) {
+  w_replacement[i,] <- sample(simple_urn, length(simple_urn), replace = TRUE)
+  wo_replacement[i,] <- sample(simple_urn, length(simple_urn), replace = FALSE)
+}
+
+#'success_fun' is a function that takes a sequence of drawn balls and checks if black ball is drawn first and white ball is drawn last. The count is incremented if the condition is met.
+
+success_fun <- function(x){
+  target_seq <- c(1,2)
+  count <- 0
+  if (x[1] == target_seq[1] && x[length(x)] == target_seq[2]) {
+    count <- count + 1
+  }
+  
+  return(count)
+}
+
+#The apply function is used to apply the success_fun to each row of the matrices, resulting in vectors w_replacement_result and wo_replacement_result containing the count of successful events for each trial.
+
+w_replacement_result <- apply(w_replacement, 1, function(x) success_fun(x))
+wo_replacement_result <- apply(wo_replacement, 1, function(x) success_fun(x))
+
+#The probabilities of success are calculated and printed. The probability is calculated as the ratio of the number of successful events to the total number of trials.
+
+cat("The probability without replacement", 
+    (length(wo_replacement_result) - sum(wo_replacement_result == 0))/
+      length(wo_replacement_result), "\n")
+
+cat("The probability with replacement", (length(w_replacement_result) - sum(w_replacement_result == 0))/
+      length(w_replacement_result), "\n")
+
+# -----------------------------------------------------------------------------------------------------
